@@ -4,6 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "driver/gpio.h"
 #include "esp_adc/adc_cali.h"
 #include "esp_adc/adc_cali_scheme.h"
 #include "esp_adc/adc_oneshot.h"
@@ -17,6 +18,8 @@ static const char *TAG = "CONTROL";
 typedef struct {
     int16_t x;
     int16_t y;
+    int16_t raw_x; // for logging only
+    int16_t raw_y;
 } joystick_mv_t;
 
 typedef struct {
@@ -50,6 +53,21 @@ static void adc_init(void)
     ESP_ERROR_CHECK(adc_cali_create_scheme_line_fitting(&cali_cfg, &adc_cali));
 }
 
+static void switch_init(void)
+{
+    gpio_config_t cfg = {
+        .pin_bit_mask = 1 << JOYSTICK_SW_PIN,
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+    };
+    ESP_ERROR_CHECK(gpio_config(&cfg));
+}
+
+static bool switch_held(void)
+{
+    return gpio_get_level(JOYSTICK_SW_PIN) == 0;
+}
+
 static joystick_mv_t joystick_read(void)
 {
     int raw, mv;
@@ -58,10 +76,12 @@ static joystick_mv_t joystick_read(void)
     ESP_ERROR_CHECK(adc_oneshot_read(adc, x_channel, &raw));
     ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali, raw, &mv));
     js.x = mv;
+    js.raw_x = raw;
 
     ESP_ERROR_CHECK(adc_oneshot_read(adc, y_channel, &raw));
     ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc_cali, raw, &mv));
     js.y = mv;
+    js.raw_y = raw;
 
     return js;
 }
@@ -110,21 +130,40 @@ static void control_task(void *arg)
 {
     espnow_packet_t packet = {0};
     TickType_t last_wake = xTaskGetTickCount();
-    float servo = 0.0f;
-    float servo_step = 4.0f;
+    float servo = SERVO_MAX_ANGLE_DEG / 2.0f;
 
     while (true) {
         packet.seq++;
         joystick_mv_t js = joystick_read();
-        joystick_out_t out = joystick_map(js);
+        joystick_out_t out;
+        bool sw = switch_held();
 
-        // TODO: read the servo input, sweeps back and forth for now
-        servo += servo_step;
-        if (servo >= SERVO_MAX_ANGLE_DEG || servo <= 0.0f) {
-            servo_step = -servo_step;
+        if (sw) {
+            // servo mode: only joystick y is used, x is centred
+            joystick_mv_t centred = js;
+            centred.x = (JOYSTICK_MIN_MV + JOYSTICK_MAX_MV) / 2;
+            out = joystick_map(centred);
+
+            servo += out.y * SERVO_MAX_RATE_DEG_PER_S * CONTROL_TASK_INTERVAL_MS / 1000.0f;
+            if (servo < 0.0f) {
+                servo = 0.0f;
+            } else if (servo > SERVO_MAX_ANGLE_DEG) {
+                servo = SERVO_MAX_ANGLE_DEG;
+            }
+
+            // movement is disabled while controlling the servo
+            out.x = 0.0f;
+            out.y = 0.0f;
+        } else {
+            out = joystick_map(js);
         }
-        
+
         packet.payload = (control_payload_t){.x = out.x, .y = out.y, .servo = servo};
+
+        if (packet.seq % CONTROL_LOG_EVERY_N == 0) {
+            ESP_LOGI(TAG, "raw x=%d y=%d, mv x=%d y=%d, sw=%d, out x=%.2f y=%.2f servo=%.1f",
+                     js.raw_x, js.raw_y, js.x, js.y, sw, out.x, out.y, servo);
+        }
 
         comm_send(&packet);
         vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(CONTROL_TASK_INTERVAL_MS));
@@ -134,5 +173,6 @@ static void control_task(void *arg)
 esp_err_t control_start(void)
 {
     adc_init();
+    switch_init();
     return xTaskCreate(control_task, "control", 4096, NULL, 4, NULL) == pdPASS ? ESP_OK : ESP_FAIL;
 }

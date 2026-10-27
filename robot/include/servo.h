@@ -3,8 +3,14 @@
 
 #include "esp_err.h"
 
-// TODO: set this to the actual wiring
-#define SERVO_GPIO            13
+#define SERVO1_PIN            22
+#define SERVO2_PIN            23
+
+#define SERVO1_OFFSET_DEG     0.0f
+#define SERVO2_OFFSET_DEG     0.0f
+
+#define SERVO1_INVERTED       0
+#define SERVO2_INVERTED       1
 
 #define SERVO_FREQ_HZ         50
 #define SERVO_MIN_PULSE_US    500

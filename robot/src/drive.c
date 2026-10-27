@@ -59,10 +59,8 @@ static void drive_task(void *arg)
             }
 
             control_payload_t ctrl = packet.payload;
-            if (isfinite(ctrl.x) && isfinite(ctrl.y) && isfinite(ctrl.servo)) {
-                drive_arcade(ctrl.x, ctrl.y);
-                servo_set_angle(ctrl.servo);
-            }
+            drive_arcade(-ctrl.x, ctrl.y);
+            servo_set_angle(ctrl.servo);
         } else {
             if (!link_lost) {
                 ESP_LOGW(TAG, "No packet for %d ms, stopping", DRIVE_COMMAND_TIMEOUT_MS);

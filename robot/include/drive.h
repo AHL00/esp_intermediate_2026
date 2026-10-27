@@ -8,11 +8,11 @@
 #define DRIVE_LOG_INTERVAL_MS 1000
 
 // Scales the x input before applying it to the motors, to make the turning less sensitive
-#define DRIVE_TURN_GAIN       0.6f
+#define DRIVE_TURN_GAIN       0.85f
 
 // Smallest motor speed (from 0 to 1) that will actually start moving the motors.
 // Brushed dc motors don't move under a certain speed
-#define DRIVE_MOTOR_DEADBAND  0.15f
+#define DRIVE_MOTOR_DEADBAND  0.5f
 
 esp_err_t drive_start(void);
 

@@ -37,6 +37,13 @@ esp_err_t motor_init(void)
     };
     ESP_ERROR_CHECK(mcpwm_new_timer(&timer_cfg, &timer));
 
+    ESP_ERROR_CHECK(gpio_set_direction(MOTOR_STBY_GPIO, GPIO_MODE_OUTPUT));
+    gpio_config_t stby_cfg = {
+        .pin_bit_mask = 1ULL << MOTOR_STBY_GPIO,
+        .mode = GPIO_MODE_OUTPUT,
+    };
+    ESP_ERROR_CHECK(gpio_config(&stby_cfg));
+
     // an operator has 2 comparators and 2 generators, one of each per motor
     mcpwm_oper_handle_t oper;
     mcpwm_operator_config_t oper_cfg = {.group_id = MOTOR_MCPWM_GROUP};

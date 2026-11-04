@@ -17,7 +17,7 @@
 #define JOYSTICK_DEADZONE 0.05f
 
 // how much of the cubic curve to use
-#define JOYSTICK_CURVE_CONSTANT  0.5f
+#define JOYSTICK_CURVE_CONSTANT  0.0f
 
 // While the switch is held, joystick y moves the servo at up to this speed
 // and driving is disabled

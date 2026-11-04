@@ -16,8 +16,8 @@
 #define ESPNOW_QUEUE_SIZE     32
 #define ESPNOW_SEND_DELAY_MS  100
 
-// d4:e9:f4:b1:4b:90
-#define ROBOT_MAC {0xD4, 0xE9, 0xF4, 0xB1, 0x4B, 0x90} 
+// broadcast to all 
+#define ROBOT_MAC {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
 
 // Must match the robot's comm.h
 typedef struct __attribute__((packed)) {

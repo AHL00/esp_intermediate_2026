@@ -14,7 +14,7 @@
 
 #define JOYSTICK_MIN_MV   142
 #define JOYSTICK_MAX_MV   3160
-#define JOYSTICK_DEADZONE 0.05f
+#define JOYSTICK_DEADZONE 0.033f
 
 // how much of the cubic curve to use
 #define JOYSTICK_CURVE_CONSTANT  0.0f

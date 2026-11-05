@@ -3,8 +3,8 @@
 
 #include "esp_err.h"
 
-#define SERVO1_PIN            22
-#define SERVO2_PIN            23
+#define SERVO1_PIN            6
+#define SERVO2_PIN            7
 
 #define SERVO1_OFFSET_DEG     0.0f
 #define SERVO2_OFFSET_DEG     0.0f
